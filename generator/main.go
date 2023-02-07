@@ -41,7 +41,7 @@ OK=0
 echo "Checking __service__ port"
 while [ $OK != 1 ]; do
     echo -n "."
-    nc -z ` + helm.ReleaseNameTpl + `-__service__ __port__ 2>&1 >/dev/null && OK=1 || sleep 1
+    nc -z __service__ __port__ 2>&1 >/dev/null && OK=1 || sleep 1
 done
 echo
 echo "Done"
