@@ -167,7 +167,14 @@ func prepareInitContainers(name string, s *types.ServiceConfig, container *helm.
 	initContainers := make([]*helm.Container, 0)
 	for dp := range s.DependsOn {
 		c := helm.NewContainer("check-"+dp, "busybox", nil, s.Labels)
-		command := strings.ReplaceAll(strings.TrimSpace(dependScript), "__service__", dp)
+
+		// if not "releae name" in the dependency, we will add it
+		dpname := dp
+		if !strings.Contains(dp, "{{ .Release.Name }}") {
+			dpname = fmt.Sprintf("{{ .Release.Name }}-%s", dp)
+		}
+
+		command := strings.ReplaceAll(strings.TrimSpace(dependScript), "__service__", dpname)
 
 		foundPort := -1
 		locker.Lock()

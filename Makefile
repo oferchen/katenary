@@ -126,11 +126,16 @@ clean:
 	rm -rf katenary dist/* release.id 
 
 
-tests: test
-test:
+
+_bats_test:
+	test/bats/bin/bats -r test/tests/
+
+_go_tests:
 	@echo -e "\033[1;33mTesting katenary $(VERSION)...\033[0m"
 	go test -v ./...
 
+tests: test
+test: _go_tests _bats_test
 
 .ONESHELL:
 push-release: build-all

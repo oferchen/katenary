@@ -76,14 +76,23 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 			if v, ok := service.Labels[helm.LABEL_SAMEPOD]; ok && v != "" {
 				log.Fatal("You cannot set a service in a same pod and have dependencies:", service.Name)
 			}
+
 			dependency := manageDependencies(service)
+
 			// the service name is sometimes different from the dependency name.
 			var servicename string
-			if dependency.Config.ServiceName == "" {
-				servicename = helm.ReleaseNameTpl + "-" + dependency.Name
-			} else {
+
+			// find the name
+			servicename = dependency.Name
+
+			if dependency.Alias != "" {
+				servicename = dependency.Alias
+			}
+
+			if dependency.Config != nil && dependency.Config.ServiceName != "" {
 				servicename = dependency.Config.ServiceName
 			}
+
 			for j, service2 := range p.Data.Services {
 				for name, dep := range service2.DependsOn {
 					if name == service.Name {
@@ -92,11 +101,14 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 					}
 				}
 			}
+
 			// force the service name to the dependency name
 			p.Data.Services[i].Name = servicename
 			service.Name = servicename
 			// add environment to the values
-			AddValues(dependency.Name, *dependency.Config.Environment)
+			if dependency.Config != nil {
+				AddValues(servicename, *dependency.Config.Environment)
+			}
 			// to no export this in Chart.yaml file
 			dependency.Config = nil
 			//helmDependencies = append(helmDependencies, d)
@@ -299,9 +311,9 @@ func manageDependencies(s types.ServiceConfig) *helm.Dependency {
 		return nil
 	}
 
-	var dependencies *helm.Dependency
+	var dependencies helm.Dependency
 	if err := yaml.Unmarshal([]byte(dep), &dependencies); err != nil {
 		log.Fatal(err)
 	}
-	return dependencies
+	return &dependencies
 }
